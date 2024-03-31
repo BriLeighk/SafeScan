@@ -30,13 +30,17 @@ class MainActivity : FlutterActivity() {
             }
     }
 
-    private fun getDetectedSpywareApps(): List<String>? {
+    private fun getDetectedSpywareApps(): List<Map<String, String>>? {
+        val apps = mutableListOf<Map<String, String>>()
+
         val infos = packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
-        val apps = mutableListOf<String>()
-        val detectedSpywareApps = mutableListOf<String>()
+        
+        val detectedSpywareApps = mutableListOf<Map<String, String>>()
 
         infos.forEach { info ->
-            apps.add(info.packageName)
+            val appName = info.loadLabel(packageManager).toString()
+            val appID = info.packageName
+            apps.add(mapOf("id" to appID, "name" to appName))
         }
 
         try {
@@ -48,8 +52,15 @@ class MainActivity : FlutterActivity() {
                 var line: String?
                 while (reader.readLine().also { line = it } != null) {
                     val tokens = line!!.split(",")
-                    if (tokens.isNotEmpty() && apps.contains(tokens[0].trim())) {
-                        detectedSpywareApps.add(tokens[0].trim())
+                    if (tokens.isNotEmpty()) {
+
+                        val csvAppId = tokens[0].trim() // Extrack app ID from current line in CSV file
+                        // Do comparison, see if app is downloaded on the device
+                        val isInstalled = apps.any { app -> app["id"] == csvAppId}
+                        if (isInstalled) {
+                            apps.firstOrNull { app -> app["id"] == csvAppId }?.let {detectedApp ->
+                            detectedSpywareApps.add(detectedApp)}
+                        }
                     }
                 }
 
