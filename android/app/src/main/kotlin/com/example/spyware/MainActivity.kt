@@ -39,7 +39,6 @@ class MainActivity : FlutterActivity() {
         val apps = mutableListOf<Map<String, Any>>()
 
         val infos = packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
-        
         val detectedSpywareApps = mutableListOf<Map<String, Any>>()
 
         infos.forEach { info ->

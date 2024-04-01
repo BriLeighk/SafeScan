@@ -78,8 +78,6 @@ class _MyHomePageState extends State<MyHomePage> {
         itemCount: _spywareApps.length,
         itemBuilder: (context, index) {
           var app = _spywareApps[index];
-          print(//REMOVE AFTER
-              "Decoding icon for ${app['name']}: ${app['icon']?.trim().substring(0, 100)}");
           return ListTile(
             leading: app['icon'] != null
                 ? Image.memory(base64Decode(app['icon']?.trim() ?? ''))
