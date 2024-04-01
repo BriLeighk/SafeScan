@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -37,7 +39,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   static const platform = MethodChannel('samples.flutter.dev/spyware');
   // initialize method channel
-  List<Map<String, String>> _spywareApps = [];
+  List<Map<String, dynamic>> _spywareApps = [];
 
   Future<void> _getSpywareApps() async {
     List<dynamic> spywareApps;
@@ -51,12 +53,16 @@ class _MyHomePageState extends State<MyHomePage> {
       }).toList(); //store result (since result is final)
     } on PlatformException catch (e) {
       spywareApps = [
-        {"id": "Error", "name": "Failed to get spyware apps: '${e.message}'."}
+        {
+          "id": "Error",
+          "name": "Failed to get spyware apps: '${e.message}'.",
+          "icon": null
+        }
       ];
     }
 
     setState(() {
-      _spywareApps = List<Map<String, String>>.from(spywareApps);
+      _spywareApps = spywareApps.cast<Map<String, dynamic>>();
       // cast list from dynamic to string type.
     });
   }
@@ -72,7 +78,12 @@ class _MyHomePageState extends State<MyHomePage> {
         itemCount: _spywareApps.length,
         itemBuilder: (context, index) {
           var app = _spywareApps[index];
+          print(//REMOVE AFTER
+              "Decoding icon for ${app['name']}: ${app['icon']?.trim().substring(0, 100)}");
           return ListTile(
+            leading: app['icon'] != null
+                ? Image.memory(base64Decode(app['icon']?.trim() ?? ''))
+                : null, //displays the icon for the app if its not null
             title: RichText(
               text: TextSpan(
                 style: DefaultTextStyle.of(context).style,

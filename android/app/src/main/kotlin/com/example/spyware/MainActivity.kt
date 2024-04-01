@@ -5,7 +5,12 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import java.io.BufferedReader
 import java.io.InputStreamReader
+import java.io.ByteArrayOutputStream
 import android.util.Log
+import android.util.Base64
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.drawable.BitmapDrawable
 
 class MainActivity : FlutterActivity() {
     companion object {
@@ -30,17 +35,35 @@ class MainActivity : FlutterActivity() {
             }
     }
 
-    private fun getDetectedSpywareApps(): List<Map<String, String>>? {
-        val apps = mutableListOf<Map<String, String>>()
+    private fun getDetectedSpywareApps(): List<Map<String, Any>>? {
+        val apps = mutableListOf<Map<String, Any>>()
 
         val infos = packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
         
-        val detectedSpywareApps = mutableListOf<Map<String, String>>()
+        val detectedSpywareApps = mutableListOf<Map<String, Any>>()
 
         infos.forEach { info ->
             val appName = info.loadLabel(packageManager).toString()
             val appID = info.packageName
-            apps.add(mapOf("id" to appID, "name" to appName))
+            val drawableIcon = info.loadIcon(packageManager)
+
+            val iconBitmap = if (drawableIcon is BitmapDrawable) {
+                drawableIcon.bitmap
+            } else {
+                Bitmap.createBitmap(drawableIcon.intrinsicWidth, drawableIcon.intrinsicHeight, 
+                Bitmap.Config.ARGB_8888).apply {
+                    val canvas = Canvas(this)
+                    drawableIcon.setBounds(0, 0, canvas.width, canvas.height)
+                    drawableIcon.draw(canvas)
+                }
+            }
+            val baos = ByteArrayOutputStream()
+            iconBitmap.compress(Bitmap.CompressFormat.PNG, 100, baos)
+            val iconBytes = baos.toByteArray()
+            val iconBase64 = Base64.encodeToString(iconBytes, Base64.NO_WRAP)
+            
+            Log.d("AppIconBase64", "Icon Base64 for $appName: $iconBase64")
+            apps.add(mapOf("id" to appID, "name" to appName, "icon" to iconBase64))
         }
 
         try {
