@@ -73,6 +73,16 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
+        actions: <Widget>[
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              setState(() {
+                _spywareApps.clear(); // Only clear the current list on screen
+              });
+            },
+          ),
+        ],
       ),
       body: ListView.builder(
         itemCount: _spywareApps.length,
@@ -81,7 +91,7 @@ class _MyHomePageState extends State<MyHomePage> {
           return ListTile(
             leading: app['icon'] != null
                 ? Image.memory(base64Decode(app['icon']?.trim() ?? ''))
-                : null, //displays the icon for the app if its not null
+                : null, // Displays the icon for the app if it's not null
             title: RichText(
               text: TextSpan(
                 style: DefaultTextStyle.of(context).style,
@@ -99,9 +109,18 @@ class _MyHomePageState extends State<MyHomePage> {
           );
         },
       ),
-      bottomNavigationBar: ElevatedButton(
-        onPressed: _getSpywareApps,
-        child: const Text('List Detected Spyware Applications'),
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: ElevatedButton(
+          onPressed: _getSpywareApps,
+          style: ElevatedButton.styleFrom(
+            foregroundColor: Theme.of(context).colorScheme.onPrimary,
+            backgroundColor: Theme.of(context)
+                .colorScheme
+                .primary, // Use the onPrimary color for text/icon color
+          ), // This button continues to initiate the scan
+          child: const Text('List Detected Spyware Applications'),
+        ),
       ),
     );
   }

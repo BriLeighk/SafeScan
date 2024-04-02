@@ -24,10 +24,10 @@ class MainActivity : FlutterActivity() {
                 when (call.method) {
                     "getSpywareApps" -> {
                         val spywareApps = getDetectedSpywareApps()
-                        if (spywareApps != null) {
+                        if (spywareApps != null && spywareApps.size != 0) {
                             result.success(spywareApps)
                         } else {
-                            result.error("UNAVAILABLE", "Could not retrieve spyware apps.", null)
+                            result.error("UNAVAILABLE", "No spyware apps were detected on your device.", null)
                         }
                     }
                     else -> result.notImplemented()
