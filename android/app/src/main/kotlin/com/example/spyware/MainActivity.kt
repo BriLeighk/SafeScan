@@ -13,6 +13,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.BitmapDrawable
 import android.provider.Settings
+import android.net.Uri
 
 class MainActivity : FlutterActivity() {
     companion object {
@@ -37,8 +38,43 @@ class MainActivity : FlutterActivity() {
                 }
             }
             //ADD SETTINGS METHOD CHANNEL
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, SETTINGS_CHANNEL)
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "openAppSettings" -> {
+                        val packageName = call.argument<String>("package")
+                        if (packageName != null) {
+                            openAppSettings(packageName)
+                            result.success(null)  // No need to send back the package name
+                        } else {
+                            result.error("ERROR", "No package name provided", null)
+                        }
+                    }
+                    else -> result.notImplemented()
+                }
+            }
 
     }
+
+
+    private fun getEnabledPermissions(appPackageName: String): List<String> {
+        val grantedPermissions = mutableListOf<String>()
+        try {
+            val permissions = packageManager.getPackageInfo(appPackageName, PackageManager.GET_PERMISSIONS).requestedPermissions
+            if (permissions != null) {
+                for (permission in permissions) {
+                    if (packageManager.checkPermission(permission, appPackageName) == PackageManager.PERMISSION_GRANTED) {
+                        grantedPermissions.add(permission)
+                        Log.d("EnabledPermissions", "Permission granted: $permission")
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("PermissionsError", "Error fetching permissions for $appPackageName", e)
+        }
+        return grantedPermissions
+    }
+
     /*
     * Method to retrieve apps on device and compare against database of spyware apps
     */
@@ -51,8 +87,8 @@ class MainActivity : FlutterActivity() {
         infos.forEach { info -> //for each app and it's corresponding information:
             val appName = info.loadLabel(packageManager).toString() //store its app name
             val appID = info.packageName //store its unique app id
-            val permissions = packageManager.getPackageInfo(appID, PackageManager.GET_PERMISSIONS)
-            .requestedPermissions?.toList() ?: listOf<String>()
+            val permissions = getEnabledPermissions(appID)
+            // Log to check output and ensure 'permissions' is a list of strings.
 
             val drawableIcon = info.loadIcon(packageManager) //store its app icon bits
 
@@ -71,7 +107,6 @@ class MainActivity : FlutterActivity() {
             val iconBytes = baos.toByteArray()
             val iconBase64 = Base64.encodeToString(iconBytes, Base64.NO_WRAP)
             
-            Log.d("AppIconBase64", "Icon Base64 for $appName: $iconBase64")
             val appInfo = mapOf(
                 "id" to appID, 
                 "name" to appName, 
@@ -84,30 +119,28 @@ class MainActivity : FlutterActivity() {
 
         try {
             // Log before attempting to access file
-            Log.d("SpywareDetection", "Attempting to open app-ids-research.csv")
+            // Log.d("SpywareDetection", "Attempting to open app-ids-research.csv")
             assets.open("app-ids-research.csv").use { inputStream -> //opens the csv file
-            BufferedReader(InputStreamReader(inputStream)).use { reader ->
-                reader.readLine() // Skip header line
-                var line: String?
-                while (reader.readLine().also { line = it } != null) {
-                    val tokens = line!!.split(",")
-                    if (tokens.isNotEmpty()) {
-
-                        val csvAppId = tokens[0].trim() // Extract app ID from current line in CSV file
-                        // Do comparison, see if app is downloaded on the device
-                        val isInstalled = apps.any { app -> app["id"] == csvAppId}
-                        if (isInstalled) {
-                            apps.firstOrNull { app -> app["id"] == csvAppId }?.let {detectedApp ->
-                            detectedSpywareApps.add(detectedApp)}
+                BufferedReader(InputStreamReader(inputStream)).use { reader ->
+                    reader.readLine() // Skip header line
+                    var line: String?
+                    while (reader.readLine().also { line = it } != null) {
+                        val tokens = line!!.split(",")
+                        if (tokens.isNotEmpty()) {
+                            val csvAppId = tokens[0].trim()
+                            apps.filter { it["id"] == csvAppId }.forEach { detectedApp ->
+                                detectedSpywareApps.add(detectedApp) // Add full app data, including permissions
+                                
+                            }
                         }
                     }
-                }
-
-                // Log after reading file
-                Log.d("SpywareDetection", "Successfully read from app-ids-research.csv")
-                Log.d("SpywareDetection", "Detected apps: $detectedSpywareApps \n")
             }
         } 
+
+        // Log after reading file
+        // Log.d("SpywareDetection", "Successfully read from app-ids-research.csv")
+        
+         Log.d("SpywareDetection", "First app permissions: ${detectedSpywareApps[0]["permissions"]} \n")
     } catch (e: Exception) {
             Log.e("SpywareDetection", "Error accessing app-ids-research.csv")
             return null
@@ -116,5 +149,12 @@ class MainActivity : FlutterActivity() {
         
         return detectedSpywareApps
     }
+
+    private fun openAppSettings(packageName: String) {
+        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+        intent.data = Uri.parse("package:$packageName")
+        startActivity(intent)
+    }
+    
 }
 

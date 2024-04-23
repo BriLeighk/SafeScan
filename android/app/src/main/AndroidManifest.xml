@@ -2,10 +2,15 @@
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"/>
 
     <application
+        android:enableOnBackInvokedCallback="true"
+        android:allowBackup="true"
         android:label="spyware"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        >
+
         <activity
+        
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTop"
