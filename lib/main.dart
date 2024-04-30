@@ -29,6 +29,7 @@ class MyApp extends StatelessWidget {
 
 // NEW HOME PAGE
 class MainPage extends StatefulWidget {
+  // Main Home Page
   const MainPage({super.key, required this.title});
 
   // Main Home Page
@@ -40,6 +41,7 @@ class MainPage extends StatefulWidget {
 }
 
 class _MainPageState extends State<MainPage> {
+  // Main Home Page State
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -47,66 +49,69 @@ class _MainPageState extends State<MainPage> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
       ),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.start, // Adjust vertical alignment
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: <Widget>[
-          const SizedBox(height: 40), // Increase space at the top
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 16.0, horizontal: 65.0),
-            child: Text(
-              'Spyware Detection Software',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+      body: Center(
+        child: Column(
+          mainAxisAlignment:
+              MainAxisAlignment.start, // Adjust vertical alignment
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: <Widget>[
+            const SizedBox(height: 40), // Increase space at the top
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
+              child: Text(
+                'Spyware Detection Software',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
             ),
-          ),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
-            child: Text(
-              'Choose an option below to begin:',
-              style: TextStyle(fontSize: 18),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
+              child: Text(
+                'Choose an option below to begin:',
+                style: TextStyle(fontSize: 18),
+              ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(
-                vertical: 20.0), // Increased vertical padding
-            child: ElevatedButton(
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                  vertical: 20.0), // Increased vertical padding
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            const MyHomePage(title: 'Scan Device')),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  minimumSize: const Size(200, 60), // Adjust size as needed
+                ),
+                child: const Text('Scan Device'),
+              ),
+            ),
+            ElevatedButton(
               onPressed: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (context) =>
-                          const MyHomePage(title: 'Scan Device')),
+                      builder: (context) => const PrivacyScanPage()),
                 );
               },
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size(200, 60), // Adjust size as needed
+                padding: const EdgeInsets.symmetric(
+                    vertical: 20.0), // Increase padding
               ),
-              child: const Text('Scan Device'),
+              child: const Text('Privacy Scan'),
             ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const PrivacyScanPage()),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              minimumSize: const Size(200, 60), // Adjust size as needed
-              padding: const EdgeInsets.symmetric(
-                  vertical: 20.0), // Increase padding
-            ),
-            child: const Text('Privacy Scan'),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 }
 
-// App Scan Home Page
 class MyHomePage extends StatefulWidget {
+  // App Scan Home Page
   const MyHomePage({super.key, required this.title});
 
   // Home Page
@@ -118,6 +123,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class PrivacyScanPage extends StatelessWidget {
+  // Privacy Scan Home Page
   const PrivacyScanPage({super.key});
 
   @override
@@ -134,6 +140,7 @@ class PrivacyScanPage extends StatelessWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  // App Scan Home Page State
   //Home Page
   bool _searchPerformed = false;
   bool _isLoading = false; // Indicator to track loading state
@@ -156,6 +163,8 @@ class _MyHomePageState extends State<MyHomePage> {
           return MapEntry(key.toString(), value.toString());
         }));
       }).toList(); //store result (since result is final)
+      spywareApps.sort((a, b) => _getSortWeight(a['type'], a['installer'])
+          .compareTo(_getSortWeight(b['type'], b['installer'])));
     } on PlatformException catch (e) {
       spywareApps = [
         {
@@ -172,6 +181,17 @@ class _MyHomePageState extends State<MyHomePage> {
       _searchPerformed = true;
       // cast list from dynamic to string type.
     });
+  }
+
+  static const settingsPlatform = MethodChannel('com.example.spyware/settings');
+
+  Future<void> _openAppSettings(String package) async {
+    try {
+      await settingsPlatform
+          .invokeMethod('openAppSettings', {'package': package});
+    } catch (e) {
+      //print('Failed to open app settings: $e');
+    }
   }
 
   //Widget for homepage
@@ -194,45 +214,93 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator()) // Show loading indicator
-          : _spywareApps.isEmpty &&
-                  _searchPerformed //if list is empty, no spyware apps detected,
-              ? const Center(
-                  child: Text("No spyware apps detected on your device"))
-              : ListView.builder(
-                  //otherwise, build the list view and display it.
-                  itemCount: _spywareApps.length,
-                  itemBuilder: (context, index) {
-                    var app = _spywareApps[index];
-                    return ListTile(
-                        leading: app['icon'] != null
-                            ? Image.memory(
-                                base64Decode(app['icon']?.trim() ?? ''))
-                            : null, // Displays the icon for the app if it's not null
-                        title: RichText(
-                          text: TextSpan(
-                            style: DefaultTextStyle.of(context).style,
-                            children: <TextSpan>[
-                              TextSpan(
-                                text: '${app['name'] ?? 'Unknown Name'}  ',
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold),
+      body: Column(
+        children: <Widget>[
+          const Padding(
+            padding: EdgeInsets.all(8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(" Color Key: ",
+                    style:
+                        TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                Text("Dual-use  ",
+                    style: TextStyle(
+                        backgroundColor: Color.fromARGB(255, 175, 230, 255),
+                        fontWeight: FontWeight.bold)),
+                Text("Spyware  ",
+                    style: TextStyle(
+                        backgroundColor: Color.fromARGB(255, 255, 255, 173),
+                        fontWeight: FontWeight.bold)),
+                Text("Unsecure Download  ",
+                    style: TextStyle(
+                        backgroundColor: Color.fromARGB(255, 255, 177, 177),
+                        fontWeight: FontWeight.bold)),
+              ],
+            ),
+          ),
+          Expanded(
+            child: _isLoading
+                ? const Center(
+                    child:
+                        CircularProgressIndicator()) // Show loading indicator
+                : _spywareApps.isEmpty &&
+                        _searchPerformed //if list is empty, no spyware apps detected,
+                    ? const Center(
+                        child: Text("No spyware apps detected on your device"))
+                    : ListView.builder(
+                        //otherwise, build the list view and display it.
+                        itemCount: _spywareApps.length,
+                        itemBuilder: (context, index) {
+                          var app = _spywareApps[index];
+                          Color bgColor =
+                              Colors.transparent; //Default no background
+
+                          if (app['installer'] != 'com.android.vending') {
+                            bgColor = const Color.fromARGB(
+                                255, 255, 177, 177); //unsecure
+                          } else {
+                            if (app['type'] == 'offstore') {
+                              bgColor =
+                                  const Color.fromARGB(255, 255, 177, 177);
+                            } else if (app['type'] == 'spyware' ||
+                                app['type'] == 'Unknown') {
+                              bgColor =
+                                  const Color.fromARGB(255, 255, 255, 173);
+                            } else if (app['type'] == 'dual-use') {
+                              bgColor =
+                                  const Color.fromARGB(255, 175, 230, 255);
+                            }
+                          }
+
+                          return ListTile(
+                              tileColor: bgColor,
+                              leading: app['icon'] != null
+                                  ? Image.memory(
+                                      base64Decode(app['icon']?.trim() ?? ''))
+                                  : null, // Displays the icon for the app if it's not null
+                              title: RichText(
+                                text: TextSpan(
+                                  style: DefaultTextStyle.of(context).style,
+                                  children: <TextSpan>[
+                                    TextSpan(
+                                      text:
+                                          '${app['name'] ?? 'Unknown Name'}  ',
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                    TextSpan(
+                                      text: '(${app['id'] ?? 'Unknown ID'})',
+                                    ),
+                                  ],
+                                ),
                               ),
-                              TextSpan(
-                                text: '(${app['id'] ?? 'Unknown ID'})',
-                              ),
-                            ],
-                          ),
-                        ),
-                        onTap: () {
-                          Navigator.of(context).push(MaterialPageRoute(
-                            builder: (context) => AppDetailPage(appData: app),
-                          ));
-                        });
-                  },
-                ),
+                              onTap: () => _openAppSettings(app['id']));
+                        },
+                      ),
+          ),
+        ],
+      ),
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.all(8.0),
         child: ElevatedButton(
@@ -250,7 +318,25 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 }
 
+int _getSortWeight(String type, String installer) {
+  if (installer != 'com.android.vending') {
+    return 1;
+  } else {
+    if (type == 'offstore') {
+      return 2;
+    } else if (type == 'spyware' || type == 'Unknown') {
+      return 3;
+    } else if (type == 'dual-use') {
+      return 4;
+    } else {
+      return 5;
+    }
+  }
+}
+
+// NOT IN USE ///////////////////////////////
 class AppDetailPage extends StatelessWidget {
+  // App Details Page (DISCONTINUED)
   final Map<String, dynamic> appData;
 
   const AppDetailPage({super.key, required this.appData});
@@ -345,3 +431,4 @@ class AppDetailPage extends StatelessWidget {
     }
   }
 }
+/////////////////////////////////////////////
