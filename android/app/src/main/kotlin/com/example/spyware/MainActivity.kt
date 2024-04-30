@@ -101,9 +101,9 @@ class MainActivity : FlutterActivity() {
                 val installer = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
                     val installSourceInfo = packageManager.getInstallSourceInfo(appID)
                     installSourceInfo.installingPackageName ?: "Unknown"
-                } else {
-                    packageManager.getInstallerPackageName(appID) ?: "Unknown"
-                }
+                } 
+                else {packageManager.getInstallerPackageName(appID) ?: "Unknown"}
+                
                 val appType = appTypes[appID] ?: "Unknown" // Defaults to unknown if not in map
                 val appInfo = mapOf(
                     "id" to appID,

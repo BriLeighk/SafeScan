@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
@@ -273,29 +274,37 @@ class _MyHomePageState extends State<MyHomePage> {
                             }
                           }
 
-                          return ListTile(
-                              tileColor: bgColor,
-                              leading: app['icon'] != null
-                                  ? Image.memory(
-                                      base64Decode(app['icon']?.trim() ?? ''))
-                                  : null, // Displays the icon for the app if it's not null
-                              title: RichText(
-                                text: TextSpan(
-                                  style: DefaultTextStyle.of(context).style,
-                                  children: <TextSpan>[
-                                    TextSpan(
-                                      text:
-                                          '${app['name'] ?? 'Unknown Name'}  ',
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.bold),
-                                    ),
-                                    TextSpan(
-                                      text: '(${app['id'] ?? 'Unknown ID'})',
-                                    ),
-                                  ],
+                          return Container(
+                            margin: const EdgeInsets.all(4.0),
+                            decoration: BoxDecoration(
+                              color: bgColor,
+                              borderRadius: BorderRadius.circular(
+                                  10.0), // makes rounded borders
+                            ),
+                            child: ListTile(
+                                tileColor: Colors.transparent,
+                                leading: app['icon'] != null
+                                    ? Image.memory(
+                                        base64Decode(app['icon']?.trim() ?? ''))
+                                    : null, // Displays the icon for the app if it's not null
+                                title: RichText(
+                                  text: TextSpan(
+                                    style: DefaultTextStyle.of(context).style,
+                                    children: <TextSpan>[
+                                      TextSpan(
+                                        text:
+                                            '${app['name'] ?? 'Unknown Name'}  ',
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                      TextSpan(
+                                        text: '(${app['id'] ?? 'Unknown ID'})',
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              onTap: () => _openAppSettings(app['id']));
+                                onTap: () => _openAppSettings(app['id'])),
+                          );
                         },
                       ),
           ),
