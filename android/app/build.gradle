@@ -64,4 +64,8 @@ flutter {
     source '../..'
 }
 
-dependencies {}
+dependencies {
+    // Include the following lines within the dependencies block
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.0'
+}
+

@@ -22,11 +22,90 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       // Title Displayed on App
-      home: const MyHomePage(title: 'Trial - Spyware App'),
+      home: const MainPage(title: 'Trial - Spyware App'),
     );
   }
 }
 
+// NEW HOME PAGE
+class MainPage extends StatefulWidget {
+  const MainPage({super.key, required this.title});
+
+  // Main Home Page
+
+  final String title; //possibly change this
+
+  @override
+  State<MainPage> createState() => _MainPageState();
+}
+
+class _MainPageState extends State<MainPage> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        title: Text(widget.title),
+      ),
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.start, // Adjust vertical alignment
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: <Widget>[
+          const SizedBox(height: 40), // Increase space at the top
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16.0, horizontal: 65.0),
+            child: Text(
+              'Spyware Detection Software',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
+            child: Text(
+              'Choose an option below to begin:',
+              style: TextStyle(fontSize: 18),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(
+                vertical: 20.0), // Increased vertical padding
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) =>
+                          const MyHomePage(title: 'Scan Device')),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size(200, 60), // Adjust size as needed
+              ),
+              child: const Text('Scan Device'),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const PrivacyScanPage()),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              minimumSize: const Size(200, 60), // Adjust size as needed
+              padding: const EdgeInsets.symmetric(
+                  vertical: 20.0), // Increase padding
+            ),
+            child: const Text('Privacy Scan'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// App Scan Home Page
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
 
@@ -38,15 +117,36 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
+class PrivacyScanPage extends StatelessWidget {
+  const PrivacyScanPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Privacy Scan'),
+      ),
+      body: const Center(
+        child: Text('Privacy Scan Functionality Coming Soon!'),
+      ),
+    );
+  }
+}
+
 class _MyHomePageState extends State<MyHomePage> {
   //Home Page
   bool _searchPerformed = false;
+  bool _isLoading = false; // Indicator to track loading state
 
   static const platform = MethodChannel('samples.flutter.dev/spyware');
   // initialize method channel to correspond with native languages
   List<Map<String, dynamic>> _spywareApps = []; //to store all detected spyware
 
   Future<void> _getSpywareApps() async {
+    setState(() {
+      _isLoading = true; // Start loading phase
+    });
+
     List<dynamic> spywareApps;
     try {
       final List<dynamic> result =
@@ -68,6 +168,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
     setState(() {
       _spywareApps = spywareApps.cast<Map<String, dynamic>>();
+      _isLoading = false; // Stop loading once scan is complete
       _searchPerformed = true;
       // cast list from dynamic to string type.
     });
@@ -87,44 +188,51 @@ class _MyHomePageState extends State<MyHomePage> {
               setState(() {
                 _spywareApps.clear(); // Only clear the current list on screen
                 _searchPerformed = false;
+                _isLoading = false; // Ensures loading is reset on refresh
               });
             },
           ),
         ],
       ),
-      body: _spywareApps.isEmpty &&
-              _searchPerformed //if list is empty, no spyware apps detected,
-          ? const Center(child: Text("No spyware apps detected on your device"))
-          : ListView.builder(
-              //otherwise, build the list view and display it.
-              itemCount: _spywareApps.length,
-              itemBuilder: (context, index) {
-                var app = _spywareApps[index];
-                return ListTile(
-                    leading: app['icon'] != null
-                        ? Image.memory(base64Decode(app['icon']?.trim() ?? ''))
-                        : null, // Displays the icon for the app if it's not null
-                    title: RichText(
-                      text: TextSpan(
-                        style: DefaultTextStyle.of(context).style,
-                        children: <TextSpan>[
-                          TextSpan(
-                            text: '${app['name'] ?? 'Unknown Name'}  ',
-                            style: const TextStyle(fontWeight: FontWeight.bold),
+      body: _isLoading
+          ? const Center(
+              child: CircularProgressIndicator()) // Show loading indicator
+          : _spywareApps.isEmpty &&
+                  _searchPerformed //if list is empty, no spyware apps detected,
+              ? const Center(
+                  child: Text("No spyware apps detected on your device"))
+              : ListView.builder(
+                  //otherwise, build the list view and display it.
+                  itemCount: _spywareApps.length,
+                  itemBuilder: (context, index) {
+                    var app = _spywareApps[index];
+                    return ListTile(
+                        leading: app['icon'] != null
+                            ? Image.memory(
+                                base64Decode(app['icon']?.trim() ?? ''))
+                            : null, // Displays the icon for the app if it's not null
+                        title: RichText(
+                          text: TextSpan(
+                            style: DefaultTextStyle.of(context).style,
+                            children: <TextSpan>[
+                              TextSpan(
+                                text: '${app['name'] ?? 'Unknown Name'}  ',
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold),
+                              ),
+                              TextSpan(
+                                text: '(${app['id'] ?? 'Unknown ID'})',
+                              ),
+                            ],
                           ),
-                          TextSpan(
-                            text: '(${app['id'] ?? 'Unknown ID'})',
-                          ),
-                        ],
-                      ),
-                    ),
-                    onTap: () {
-                      Navigator.of(context).push(MaterialPageRoute(
-                        builder: (context) => AppDetailPage(appData: app),
-                      ));
-                    });
-              },
-            ),
+                        ),
+                        onTap: () {
+                          Navigator.of(context).push(MaterialPageRoute(
+                            builder: (context) => AppDetailPage(appData: app),
+                          ));
+                        });
+                  },
+                ),
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.all(8.0),
         child: ElevatedButton(
