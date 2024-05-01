@@ -84,16 +84,17 @@ class MainActivity : FlutterActivity() {
     /*
     * Method to retrieve apps on device and compare against database of spyware apps
     */
-    private fun getDetectedSpywareApps(): List<Map<String, Any>>? {
+    private fun getDetectedSpywareApps(): List<Map<String, Any?>>? {
         if (!::spywareAppIds.isInitialized) {
             loadSpywareData()
         }
     
-        val detectedSpywareApps = mutableListOf<Map<String, Any>>()
+        val detectedSpywareApps = mutableListOf<Map<String, Any?>>()
         // Iterate over installed applications and collect data only for spyware apps
         val installedApps = packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
         installedApps.parallelStream().forEach { app ->
             val appID = app.packageName
+            Log.e("AppID", "Check App ID: $appID")
             if (appID in spywareAppIds) {
                 // Fetch detailed information only for apps identified as spyware
                 val appName = app.loadLabel(packageManager).toString()
@@ -103,16 +104,24 @@ class MainActivity : FlutterActivity() {
                     installSourceInfo.installingPackageName ?: "Unknown"
                 } 
                 else {packageManager.getInstallerPackageName(appID) ?: "Unknown"}
+
+                val storeLink = getStoreLink(appID, installer)
                 
+
                 val appType = appTypes[appID] ?: "Unknown" // Defaults to unknown if not in map
-                val appInfo = mapOf(
+                val appInfo: Map<String, Any?> = mapOf(
                     "id" to appID,
                     "name" to appName,
                     "icon" to iconBase64,
                     "installer" to installer,
+                    "storeLink" to storeLink,
                     "type" to appType
                     // "permissions" to permissions
                 )
+                
+                // Log.e("StoreLinkDebug", "Store link for $appID: $storeLink")
+                // Log.e("AppID", "Check App ID: $appID")
+                
                 synchronized(detectedSpywareApps) {
                     detectedSpywareApps.add(appInfo)
                 }
@@ -121,6 +130,15 @@ class MainActivity : FlutterActivity() {
     
         return detectedSpywareApps
     }
+
+    private fun getStoreLink(packageName: String, installer: String): String? {
+        return when (installer) {
+            "com.android.vending" -> "https://play.google.com/store/apps/details?id=$packageName" // Google Play
+            "com.amazon.venezia" -> "https://www.amazon.com/gp/mas/dl/android?p=$packageName" // Amazon Appstore
+            // Add other store URLs based on their installer package names here
+            else -> null // Unknown installer
+        }
+    }    
     
     private fun getBase64IconFromDrawable(drawable: Drawable): String {
         val bitmap = (drawable as? BitmapDrawable)?.bitmap ?: Bitmap.createBitmap(drawable.intrinsicWidth, drawable.intrinsicHeight, Bitmap.Config.ARGB_8888).also {

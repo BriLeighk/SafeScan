@@ -1,9 +1,9 @@
 import 'dart:convert';
-
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
+
+import 'package:url_launcher/url_launcher.dart';
 
 void main() {
   runApp(const MyApp());
@@ -142,11 +142,11 @@ class PrivacyScanPage extends StatelessWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   // App Scan Home Page State
-  //Home Page
+
   bool _searchPerformed = false;
   bool _isLoading = false; // Indicator to track loading state
-
   static const platform = MethodChannel('samples.flutter.dev/spyware');
+
   // initialize method channel to correspond with native languages
   List<Map<String, dynamic>> _spywareApps = []; //to store all detected spyware
 
@@ -185,7 +185,6 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   static const settingsPlatform = MethodChannel('com.example.spyware/settings');
-
   Future<void> _openAppSettings(String package) async {
     try {
       await settingsPlatform
@@ -195,9 +194,14 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  //Widget for homepage
+  // WIDGET FOR SCAN PAGE ////////////////////////////////////////////////////
   @override
   Widget build(BuildContext context) {
+    const List<String> secureInstallers = [
+      'com.android.vending',
+      'com.amazon.venezia',
+      // other secure installer package names
+    ];
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
@@ -254,22 +258,22 @@ class _MyHomePageState extends State<MyHomePage> {
                         itemCount: _spywareApps.length,
                         itemBuilder: (context, index) {
                           var app = _spywareApps[index];
-                          Color bgColor =
+                          Color baseColor =
                               Colors.transparent; //Default no background
 
                           if (app['installer'] != 'com.android.vending') {
-                            bgColor = const Color.fromARGB(
+                            baseColor = const Color.fromARGB(
                                 255, 255, 177, 177); //unsecure
                           } else {
                             if (app['type'] == 'offstore') {
-                              bgColor =
+                              baseColor =
                                   const Color.fromARGB(255, 255, 177, 177);
                             } else if (app['type'] == 'spyware' ||
                                 app['type'] == 'Unknown') {
-                              bgColor =
+                              baseColor =
                                   const Color.fromARGB(255, 255, 255, 173);
                             } else if (app['type'] == 'dual-use') {
-                              bgColor =
+                              baseColor =
                                   const Color.fromARGB(255, 175, 230, 255);
                             }
                           }
@@ -277,7 +281,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           return Container(
                             margin: const EdgeInsets.all(4.0),
                             decoration: BoxDecoration(
-                              color: bgColor,
+                              color: baseColor,
                               borderRadius: BorderRadius.circular(
                                   10.0), // makes rounded borders
                             ),
@@ -303,6 +307,14 @@ class _MyHomePageState extends State<MyHomePage> {
                                     ],
                                   ),
                                 ),
+                                trailing:
+                                    secureInstallers.contains(app['installer'])
+                                        ? IconButton(
+                                            icon: const Icon(Icons.open_in_new),
+                                            onPressed: () =>
+                                                _launchURL(app['storeLink']),
+                                          )
+                                        : null,
                                 onTap: () => _openAppSettings(app['id'])),
                           );
                         },
@@ -327,8 +339,19 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 }
 
+void _launchURL(String? urlString) async {
+  if (urlString != null) {
+    final Uri url = Uri.parse(urlString);
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url);
+    } else {
+      //Handle error
+    }
+  }
+}
+
 int _getSortWeight(String type, String installer) {
-  if (installer != 'com.android.vending') {
+  if (installer != 'com.android.vending' && installer != 'com.amazon.venezia') {
     return 1;
   } else {
     if (type == 'offstore') {
