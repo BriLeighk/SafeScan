@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
-
 import 'package:url_launcher/url_launcher.dart';
 
 void main() {
@@ -115,8 +114,6 @@ class MyHomePage extends StatefulWidget {
   // App Scan Home Page
   const MyHomePage({super.key, required this.title});
 
-  // Home Page
-
   final String title;
 
   @override
@@ -142,7 +139,6 @@ class PrivacyScanPage extends StatelessWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   // App Scan Home Page State
-
   bool _searchPerformed = false;
   bool _isLoading = false; // Indicator to track loading state
   static const platform = MethodChannel('samples.flutter.dev/spyware');
@@ -175,7 +171,6 @@ class _MyHomePageState extends State<MyHomePage> {
         }
       ];
     }
-
     setState(() {
       _spywareApps = spywareApps.cast<Map<String, dynamic>>();
       _isLoading = false; // Stop loading once scan is complete
@@ -191,6 +186,26 @@ class _MyHomePageState extends State<MyHomePage> {
           .invokeMethod('openAppSettings', {'package': package});
     } catch (e) {
       //print('Failed to open app settings: $e');
+    }
+  }
+
+  Color lightColor(
+    Map<String, dynamic> app,
+    String installer,
+    String type,
+  ) {
+    if (app['installer'] != 'com.android.vending') {
+      return const Color.fromARGB(255, 255, 177, 177); //unsecure
+    } else {
+      if (app['type'] == 'offstore') {
+        return const Color.fromARGB(255, 255, 177, 177);
+      } else if (app['type'] == 'spyware' || app['type'] == 'Unknown') {
+        return const Color.fromARGB(255, 255, 255, 173);
+      } else if (app['type'] == 'dual-use') {
+        return const Color.fromARGB(255, 175, 230, 255);
+      } else {
+        return Colors.grey;
+      }
     }
   }
 
@@ -222,7 +237,7 @@ class _MyHomePageState extends State<MyHomePage> {
       body: Column(
         children: <Widget>[
           const Padding(
-            padding: EdgeInsets.all(8.0),
+            padding: EdgeInsets.all(4.0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -237,7 +252,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     style: TextStyle(
                         backgroundColor: Color.fromARGB(255, 255, 255, 173),
                         fontWeight: FontWeight.bold)),
-                Text("Unsecure Download  ",
+                Text("Unsecure Download ",
                     style: TextStyle(
                         backgroundColor: Color.fromARGB(255, 255, 177, 177),
                         fontWeight: FontWeight.bold)),
@@ -258,65 +273,55 @@ class _MyHomePageState extends State<MyHomePage> {
                         itemCount: _spywareApps.length,
                         itemBuilder: (context, index) {
                           var app = _spywareApps[index];
-                          Color baseColor =
-                              Colors.transparent; //Default no background
+                          Color baseColor = lightColor(app, app['installer'],
+                              app['type']); //Default no background
 
-                          if (app['installer'] != 'com.android.vending') {
-                            baseColor = const Color.fromARGB(
-                                255, 255, 177, 177); //unsecure
-                          } else {
-                            if (app['type'] == 'offstore') {
-                              baseColor =
-                                  const Color.fromARGB(255, 255, 177, 177);
-                            } else if (app['type'] == 'spyware' ||
-                                app['type'] == 'Unknown') {
-                              baseColor =
-                                  const Color.fromARGB(255, 255, 255, 173);
-                            } else if (app['type'] == 'dual-use') {
-                              baseColor =
-                                  const Color.fromARGB(255, 175, 230, 255);
-                            }
-                          }
+                          return TextButton(
+                              onPressed: () {
+                                _openAppSettings(app['id']);
+                              },
+                              child: Container(
+                                margin: const EdgeInsets.all(.1),
+                                decoration: BoxDecoration(
+                                  color: baseColor,
+                                  borderRadius: BorderRadius.circular(10.0),
 
-                          return Container(
-                            margin: const EdgeInsets.all(4.0),
-                            decoration: BoxDecoration(
-                              color: baseColor,
-                              borderRadius: BorderRadius.circular(
-                                  10.0), // makes rounded borders
-                            ),
-                            child: ListTile(
-                                tileColor: Colors.transparent,
-                                leading: app['icon'] != null
-                                    ? Image.memory(
-                                        base64Decode(app['icon']?.trim() ?? ''))
-                                    : null, // Displays the icon for the app if it's not null
-                                title: RichText(
-                                  text: TextSpan(
-                                    style: DefaultTextStyle.of(context).style,
-                                    children: <TextSpan>[
-                                      TextSpan(
-                                        text:
-                                            '${app['name'] ?? 'Unknown Name'}  ',
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.bold),
-                                      ),
-                                      TextSpan(
-                                        text: '(${app['id'] ?? 'Unknown ID'})',
-                                      ),
-                                    ],
-                                  ),
+                                  // makes rounded borders
                                 ),
-                                trailing:
-                                    secureInstallers.contains(app['installer'])
-                                        ? IconButton(
-                                            icon: const Icon(Icons.open_in_new),
-                                            onPressed: () =>
-                                                _launchURL(app['storeLink']),
-                                          )
-                                        : null,
-                                onTap: () => _openAppSettings(app['id'])),
-                          );
+                                child: ListTile(
+                                  tileColor: Colors.transparent,
+                                  leading: app['icon'] != null
+                                      ? Image.memory(base64Decode(
+                                          app['icon']?.trim() ?? ''))
+                                      : null, // Displays the icon for the app if it's not null
+                                  title: RichText(
+                                    text: TextSpan(
+                                      style: DefaultTextStyle.of(context).style,
+                                      children: <TextSpan>[
+                                        TextSpan(
+                                          text:
+                                              '${app['name'] ?? 'Unknown Name'}  ',
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.bold),
+                                        ),
+                                        TextSpan(
+                                          text:
+                                              '(${app['id'] ?? 'Unknown ID'})',
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  trailing: secureInstallers
+                                          .contains(app['installer'])
+                                      ? IconButton(
+                                          icon: const Icon(Icons.open_in_new),
+                                          onPressed: () =>
+                                              _launchURL(app['storeLink']),
+                                        )
+                                      : null,
+                                  //onTap: () => _openAppSettings(app['id'])),
+                                ),
+                              ));
                         },
                       ),
           ),
@@ -365,102 +370,3 @@ int _getSortWeight(String type, String installer) {
     }
   }
 }
-
-// NOT IN USE ///////////////////////////////
-class AppDetailPage extends StatelessWidget {
-  // App Details Page (DISCONTINUED)
-  final Map<String, dynamic> appData;
-
-  const AppDetailPage({super.key, required this.appData});
-
-  static const platform = MethodChannel('com.example.spyware/settings');
-
-  Future<void> _openAppSettings(String package) async {
-    try {
-      await platform.invokeMethod('openAppSettings', {'package': package});
-    } catch (e) {
-      //print('Failed to open app settings: $e');
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // Casting permissions into a List of Strings
-    List<String> permissions = [];
-    if (appData['permissions'] is List) {
-      permissions = List<String>.from(appData['permissions']);
-    }
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('App Details'),
-      ),
-      body: Column(
-        children: <Widget>[
-          ListTile(
-            title: Text(appData['name']),
-            subtitle: Text('App ID: ${appData['id']}'),
-            trailing: const Icon(Icons.security),
-          ),
-          Expanded(
-            child: permissions.isNotEmpty
-                ? ListView.builder(
-                    itemCount: permissions.length,
-                    itemBuilder: (context, index) {
-                      return ListTile(
-                        title: Text('Permission: ${permissions[index]}'),
-                        leading: Icon(_getPermissionIcon(permissions[index])),
-                      );
-                    },
-                  )
-                : const Center(
-                    child: Text(
-                        "This app currently doesn't have any permissions enabled.")),
-          ),
-          ElevatedButton(
-            onPressed: () => _openAppSettings(appData['id']),
-            child: const Text('Delete App in App Settings'),
-          )
-        ],
-      ),
-    );
-  }
-
-  IconData _getPermissionIcon(String permission) {
-    switch (permission) {
-      case 'Camera':
-        return Icons.camera_alt;
-      case 'Location':
-        return Icons.location_on;
-      case 'Contacts':
-        return Icons.contacts;
-      case 'Phone':
-        return Icons.phone;
-      case 'Microphone':
-        return Icons.mic;
-      case 'SMS':
-        return Icons.message;
-      case 'Calendar':
-        return Icons.calendar_today;
-      case 'Body sensors':
-        return Icons.favorite;
-      case 'Call logs':
-        return Icons.call;
-      case 'Files':
-        return Icons.folder;
-      case 'Music and audio':
-        return Icons.music_note;
-      case 'Nearby devices':
-        return Icons.devices_other;
-      case 'Notifications':
-        return Icons.notifications;
-      case 'Photos and videos':
-        return Icons.photo;
-      case 'Physical activity':
-        return Icons.directions_run;
-      default:
-        return Icons
-            .help_outline; // A default icon for permissions not explicitly handled
-    }
-  }
-}
-/////////////////////////////////////////////
