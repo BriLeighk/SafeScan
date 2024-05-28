@@ -1,0 +1,32 @@
+name: Build iOS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: 'latest'
+
+    - name: Install dependencies
+      run: flutter pub get
+
+    - name: Build iOS
+      run: flutter build ios --release --no-codesign
+
+    - name: Archive iOS build
+      if: success()
+      uses: actions/upload-artifact@v2
+      with:
+        name: ios-build
+        path: build/ios/iphoneos/*.ipa
