@@ -15,6 +15,8 @@ import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import java.io.ByteArrayOutputStream
+import java.io.BufferedReader
+import java.io.InputStreamReader
 
 class MainActivity : FlutterActivity() {
     companion object {
@@ -24,6 +26,7 @@ class MainActivity : FlutterActivity() {
         private const val APP_CHECK_CHANNEL = "com.example.spyware/app_check"
         private const val APP_DETAILS_CHANNEL = "com.example.spyware/app_details"
         private const val APP_LAUNCH_CHANNEL = "com.example.spyware/app_launch"
+        private const val ADB_CHANNEL = "com.example.spyware/adb"
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -102,9 +105,61 @@ class MainActivity : FlutterActivity() {
                 }
             }
 
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, ADB_CHANNEL).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "scanOtherDevice" -> {
+                    val connectedDevices = getConnectedDevices()
+                    if (connectedDevices.isNotEmpty()) {
+                        val scanResult = scanDevice(connectedDevices.first())
+                        result.success(scanResult)
+                    } else {
+                        result.error("NO_DEVICE", "No connected device found.", null)
+                    }
+                }
+                else -> result.notImplemented()
+            }
+        }
+
         // New method channel for launching apps
         
     }
+
+    private fun getConnectedDevices(): List<String> {
+        return try {
+            val process = Runtime.getRuntime().exec("adb devices")
+            val reader = BufferedReader(InputStreamReader(process.inputStream))
+            val devices = mutableListOf<String>()
+            reader.forEachLine { line ->
+                if (line.endsWith("device")) {
+                    val deviceID = line.split("\t")[0]
+                    devices.add(deviceID)
+                }
+            }
+            reader.close()
+            devices
+        } catch (e: Exception) {
+            Log.e("ADBError", "Error getting connected devices", e)
+            emptyList()
+        }
+    }
+
+    private fun scanDevice(deviceID: String): String {
+        return try {
+            val process = Runtime.getRuntime().exec("adb -s $deviceID shell pm list packages")
+            val reader = BufferedReader(InputStreamReader(process.inputStream))
+            val output = StringBuilder()
+            var line: String?
+            while (reader.readLine().also { line = it } != null) {
+                output.append(line).append("\n")
+            }
+            reader.close()
+            output.toString()
+        } catch (e: Exception) {
+            Log.e("ADBError", "Error scanning device $deviceID", e)
+            "Error scanning device $deviceID: ${e.message}"
+        }
+    }
+
 
     private lateinit var spywareAppIds: Set<String>
     private lateinit var appTypes: Map<String, String>

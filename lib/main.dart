@@ -124,9 +124,31 @@ class _MainPageState extends State<MainPage> {
               },
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size(200, 60),
-                padding: const EdgeInsets.symmetric(vertical: 20.0),
+                padding: const EdgeInsets.symmetric(vertical: 5.0),
               ),
               child: const Text('Privacy Scan'),
+            ),
+            const Padding(
+                padding: EdgeInsets.symmetric(vertical: 5.0, horizontal: 15.0),
+                child: Text(
+                  '\nConducting an ADB Scan allows you to scan your device remotely'
+                  ' from an alternate device.',
+                  style: TextStyle(fontSize: 14),
+                )),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ADBScanPage(),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size(200, 60),
+                padding: const EdgeInsets.symmetric(vertical: 5.0),
+              ),
+              child: const Text('ADB Scan'),
             ),
           ],
         ),
@@ -208,7 +230,6 @@ class _PrivacyScanPageState extends State<PrivacyScanPage> {
   }
 
   Future<void> _launchApp(String packageName) async {
-    String url;
     Map<String, String> urlMap = {
       'com.instagram.android':
           'https://www.instagram.com/accounts/login/?next=/accounts/manage_access/',
@@ -467,6 +488,102 @@ class _MyHomePageState extends State<MyHomePage> {
             backgroundColor: Theme.of(context).colorScheme.primary,
           ),
           child: const Text('List Detected Spyware Applications'),
+        ),
+      ),
+    );
+  }
+}
+
+class ADBScanPage extends StatefulWidget {
+  const ADBScanPage({super.key});
+
+  @override
+  _ADBScanPageState createState() => _ADBScanPageState();
+}
+
+class _ADBScanPageState extends State<ADBScanPage> {
+  static const MethodChannel adbChannel =
+      MethodChannel('com.example.spyware/adb');
+
+  String _scanResult = "";
+  bool _isScanning = false;
+
+  Future<void> _scanOtherDevice() async {
+    setState(() {
+      _isScanning = true;
+    });
+
+    try {
+      final String result = await adbChannel.invokeMethod('scanOtherDevice');
+      setState(() {
+        _scanResult = result;
+      });
+    } catch (e) {
+      setState(() {
+        _scanResult = "Error: ${e.toString()}";
+      });
+    } finally {
+      setState(() {
+        _isScanning = false;
+      });
+    }
+  }
+
+  void _showInstructions() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Instructions for ADB Scan'),
+          content: const Text(
+              '1. Connect the target device to this device using a USB cable.\n'
+              '2. Ensure that USB debugging is enabled on the target device.\n'
+              '3. Press "Scan Other Device" to begin the scan.\n'
+              '4. Wait for the scan to complete and review the results.'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('ADB Scan'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            ElevatedButton(
+              onPressed: _showInstructions,
+              child: const Text('Show Instructions'),
+            ),
+            const Divider(height: 20),
+            ElevatedButton(
+              onPressed: _isScanning ? null : _scanOtherDevice,
+              child: _isScanning
+                  ? const CircularProgressIndicator()
+                  : const Text('Scan Other Device'),
+            ),
+            const SizedBox(height: 20),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Text(
+                  _scanResult,
+                  style: const TextStyle(fontSize: 16),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
