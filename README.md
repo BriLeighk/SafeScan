@@ -23,12 +23,12 @@ This app is designed to assist victims of Intimate Partner Violence (IPV), who f
 - [ ] **Data Output**: Outputs all scan data from the target device to the source device.
 - [ ] **Risk Mitigation**: Enables the victim to get help without having to download anything directly on their device, reducing the risk of alerting their abuser.
 
-#### Technology Stack:
+## Technology Stack:
 - Dart with Flutter: Primary development framework.
 - Kotlin: Used for Android-side coding.
 - Swift: In development for the iOS version of the app, with URL schemes generated for implementation.
 
-#### Getting Started
+## Getting Started
 - Close the repository: ` git clone https://github.com/BriLeighk/SafeScan.git `
 - Navigate to the project directory: ` cd SafeScan `
 - Install dependencies: ` flutter pub get `
