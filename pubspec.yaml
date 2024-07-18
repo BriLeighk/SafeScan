@@ -7,15 +7,23 @@ environment:
   sdk: '>=3.3.3 <4.0.0'
 
 dependencies:
+  csv: ^6.0.0
   flutter:
     sdk: flutter
+  http: ^1.2.1
+  path_provider: ^2.1.3
   percent_indicator: ^4.2.3
   url_launcher: ^6.2.6
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^4.0.0
+
 
 flutter:
   uses-material-design: true
+  assets:
+  - assets/icons/icons8-location-24.png
+  - assets/icons/icons8-camera-24.png
+  - assets/icons/icons8-microphone-24.png
+  - assets/icons/icons8-storage-24.png

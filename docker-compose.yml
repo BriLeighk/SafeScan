@@ -1,0 +1,10 @@
+version: '3.8'
+
+services:
+  flutter-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/app
+    command: flutter run -d emulator-5554  # Replace with your specific emulator ID

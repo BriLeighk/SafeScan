@@ -2,6 +2,7 @@ package com.example.spyware
 
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.pm.PackageInfo
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
@@ -17,6 +18,14 @@ import io.flutter.plugin.common.MethodChannel
 import java.io.ByteArrayOutputStream
 import java.io.BufferedReader
 import java.io.InputStreamReader
+import java.io.File
+import androidx.core.content.ContextCompat
+import androidx.core.content.PermissionChecker
+import androidx.core.app.ActivityCompat
+import kotlin.collections.listOf
+import com.google.android.material.R
+
+
 
 class MainActivity : FlutterActivity() {
     companion object {
@@ -31,16 +40,22 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
             .setMethodCallHandler { call, result ->
                 when (call.method) {
                     "getSpywareApps" -> {
-                        val spywareApps = getDetectedSpywareApps()
-                        if (spywareApps != null) {
-                            result.success(spywareApps)
+                        val csvData = call.argument<List<List<String>>>("csvData")
+                        if (csvData != null) {
+                            val spywareApps = getDetectedSpywareApps(csvData ?: listOf())
+                            if (spywareApps != null) {
+                                result.success(spywareApps)
+                            } else {
+                                result.error("UNAVAILABLE", "Error retrieving list of apps from the device.", null)
+                            }
                         } else {
-                            result.error("UNAVAILABLE", "Error retrieving list of apps from the device.", null)
-                        }
+                            result.error("INVALID_ARGUMENT", "CSV data is required", null)
+                        }       
                     }
                     else -> result.notImplemented()
                 }
@@ -105,95 +120,122 @@ class MainActivity : FlutterActivity() {
                 }
             }
 
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, ADB_CHANNEL).setMethodCallHandler { call, result ->
-            when (call.method) {
-                "scanOtherDevice" -> {
-                    val connectedDevices = getConnectedDevices()
-                    if (connectedDevices.isNotEmpty()) {
-                        val scanResult = scanDevice(connectedDevices.first())
-                        result.success(scanResult)
-                    } else {
-                        result.error("NO_DEVICE", "No connected device found.", null)
+            MethodChannel(flutterEngine.dartExecutor.binaryMessenger, ADB_CHANNEL).setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "connectToDevice" -> {
+                        val port = call.argument<Int>("port")
+                        if (port != null) {
+                            val connectionResult = connectToDevice(port)
+                            result.success(connectionResult)
+                        } else {
+                            result.error("INVALID_PORT", "No port provided.", null)
+                        }
+                    }
+                    "scanDevice" -> {
+                        val csvData = call.argument<List<List<String>>>("csvData")
+                        if (csvData != null) {
+                            val scanResult = scanDevice(csvData)
+                            result.success(scanResult)
+                        } else {
+                            result.error("INVALID_DATA", "CSV data is required", null)
+                        }
+                    }
+                    else -> result.notImplemented()
+                }
+            }
+        }
+    
+        
+        private fun connectToDevice(port: Int): Boolean {
+            return try {
+                val process = Runtime.getRuntime().exec("adb connect 127.0.0.1:$port")
+                val reader = BufferedReader(InputStreamReader(process.inputStream))
+                val output = StringBuilder()
+                var line: String?
+                while (reader.readLine().also { line = it } != null) {
+                    output.append(line).append("\n")
+                }
+                reader.close()
+                output.toString().contains("connected to 127.0.0.1:$port")
+            } catch (e: Exception) {
+                Log.e("ADBError", "Error connecting to port $port", e)
+                false
+            }
+        }
+    
+        private fun scanDevice(csvData: List<List<String>>): String {
+            val ids = mutableSetOf<String>()
+            val types = mutableMapOf<String, String>()
+    
+            for (line in csvData) {
+                if (line.size > 2) {
+                    ids.add(line[0].trim())
+                    types[line[0].trim()] = line[2].trim()
+                }
+            }
+    
+            val spywareAppIds = ids
+            val appTypes = types
+    
+            return try {
+                val process = Runtime.getRuntime().exec("adb shell pm list packages")
+                val reader = BufferedReader(InputStreamReader(process.inputStream))
+                
+                var line: String?
+                val detectedApps = mutableListOf<Map<String, Any?>>()
+    
+                while (reader.readLine().also { line = it } != null) {
+                    val appID = line?.substringAfter("package:")?.trim()
+                    if (appID != null && spywareAppIds.contains(appID)) {
+                        val appName = appID // Simplified for example, you can get more details if needed
+                        val appType = appTypes[appID] ?: "Unknown"
+                        val appInfo: Map<String, Any?> = mapOf(
+                            "id" to appID,
+                            "name" to appName,
+                            "type" to appType
+                        )
+                        detectedApps.add(appInfo)
                     }
                 }
-                else -> result.notImplemented()
-            }
-        }
-
-        // New method channel for launching apps
-        
-    }
-
-    private fun getConnectedDevices(): List<String> {
-        return try {
-            val process = Runtime.getRuntime().exec("adb devices")
-            val reader = BufferedReader(InputStreamReader(process.inputStream))
-            val devices = mutableListOf<String>()
-            reader.forEachLine { line ->
-                if (line.endsWith("device")) {
-                    val deviceID = line.split("\t")[0]
-                    devices.add(deviceID)
+                reader.close()
+                if (detectedApps.isEmpty()) {
+                    "No spyware apps detected on the target device."
+                } else {
+                    detectedApps.joinToString(separator = "\n") { "${it["name"]} (${it["id"]}) - ${it["type"]}" }
                 }
+            } catch (e: Exception) {
+                Log.e("ADBError", "Error scanning device", e)
+                "Error scanning device: ${e.message}"
             }
-            reader.close()
-            devices
-        } catch (e: Exception) {
-            Log.e("ADBError", "Error getting connected devices", e)
-            emptyList()
         }
-    }
+    
+        
 
-    private fun scanDevice(deviceID: String): String {
-        return try {
-            val process = Runtime.getRuntime().exec("adb -s $deviceID shell pm list packages")
-            val reader = BufferedReader(InputStreamReader(process.inputStream))
-            val output = StringBuilder()
-            var line: String?
-            while (reader.readLine().also { line = it } != null) {
-                output.append(line).append("\n")
-            }
-            reader.close()
-            output.toString()
-        } catch (e: Exception) {
-            Log.e("ADBError", "Error scanning device $deviceID", e)
-            "Error scanning device $deviceID: ${e.message}"
-        }
-    }
 
 
     private lateinit var spywareAppIds: Set<String>
     private lateinit var appTypes: Map<String, String>
 
-    private fun loadSpywareData() {
+
+    private fun getDetectedSpywareApps(csvData: List<List<String>>): List<Map<String, Any?>> {
         val ids = mutableSetOf<String>()
         val types = mutableMapOf<String, String>()
-        try {
-            assets.open("app-ids-research.csv").bufferedReader().use { reader ->
-                reader.readLine()
-                reader.forEachLine { line ->
-                    line.split(",").let {
-                        if (it.size > 2) {
-                            ids.add(it[0].trim())
-                            types[it[0].trim()] = it[2].trim()
-                        }
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            Log.e("SpywareDetection", "Failed to read spyware IDs from CSV", e)
-        }
-        spywareAppIds = ids
-        appTypes = types
-    }
 
-    private fun getDetectedSpywareApps(): List<Map<String, Any?>>? {
-        if (!::spywareAppIds.isInitialized) {
-            loadSpywareData()
+        for (line in csvData) {
+            if (line.size > 2) {
+                ids.add(line[0].trim())
+                types[line[0].trim()] = line[2].trim()
+            }
         }
+            
+        val spywareAppIds = ids
+        val appTypes = types
+
 
         val detectedSpywareApps = mutableListOf<Map<String, Any?>>()
         val installedApps = packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
-        installedApps.parallelStream().forEach { app ->
+        
+        installedApps.forEach { app ->
             val appID = app.packageName
             Log.e("AppID", "Check App ID: $appID")
             if (appID in spywareAppIds) {
@@ -207,13 +249,15 @@ class MainActivity : FlutterActivity() {
                 }
                 val storeLink = getStoreLink(appID, installer)
                 val appType = appTypes[appID] ?: "Unknown"
+                val permissions = getAppPermissions(appID)
                 val appInfo: Map<String, Any?> = mapOf(
                     "id" to appID,
                     "name" to appName,
                     "icon" to iconBase64,
                     "installer" to installer,
                     "storeLink" to storeLink,
-                    "type" to appType
+                    "type" to appType,
+                    "permissions" to permissions
                 )
                 synchronized(detectedSpywareApps) {
                     detectedSpywareApps.add(appInfo)
@@ -259,9 +303,16 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun launchPrivacyCheckup() {
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://myaccount.google.com/privacycheckup"))
-        startActivity(intent)
+        try {
+            val intent = Intent(Intent.ACTION_VIEW)
+            intent.data = Uri.parse("https://myaccount.google.com/privacycheckup")
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            startActivity(intent)
+        } catch (e: Exception) {
+            Log.e("OpenBrowser", "Error opening browser", e)
+        }
     }
+    
     
 
     private fun getAppDetails(packageName: String): Map<String, String>? {
@@ -284,20 +335,66 @@ class MainActivity : FlutterActivity() {
         }
     }
 
-    private fun getAppPermissions(packageName: String): List<String> {
-        val grantedPermissions = mutableListOf<String>()
+
+    private fun getAppPermissions(packageName: String): List<Map<String, String>> {
+        val permissionGroups = mapOf(
+            "android.permission.ACCESS_FINE_LOCATION" to "location",
+            "android.permission.ACCESS_COARSE_LOCATION" to "location",
+            "android.permission.ACCESS_BACKGROUND_LOCATION" to "location",
+            "android.permission.CAMERA" to "camera",
+            "android.permission.RECORD_AUDIO" to "microphone",
+            "android.permission.READ_EXTERNAL_STORAGE" to "storage",
+            "android.permission.WRITE_EXTERNAL_STORAGE" to "storage",
+            "android.permission.MANAGE_EXTERNAL_STORAGE" to "storage",
+            "android.permission.READ_MEDIA_IMAGES" to "storage",
+            "android.permission.READ_MEDIA_VIDEO" to "storage"
+        )
+        
+        val addedGroups = mutableSetOf<String>()
+        val grantedPermissions = mutableListOf<Map<String, String>>()
+        
         try {
-            val permissions = packageManager.getPackageInfo(packageName, PackageManager.GET_PERMISSIONS).requestedPermissions
-            if (permissions != null) {
-                for (permission in permissions) {
-                    if (packageManager.checkPermission(permission, packageName) == PackageManager.PERMISSION_GRANTED) {
-                        grantedPermissions.add(permission)
-                    }
+            val packageInfo = packageManager.getPackageInfo(packageName, PackageManager.GET_PERMISSIONS)
+            val requestedPermissions = packageInfo.requestedPermissions
+            val requestedPermissionsFlags = packageInfo.requestedPermissionsFlags
+            
+            requestedPermissions?.forEachIndexed { index, permission ->
+                val group = permissionGroups[permission]
+                if (group != null && !addedGroups.contains(group) && requestedPermissionsFlags[index] and PackageInfo.REQUESTED_PERMISSION_GRANTED != 0) {
+                    val iconName = getPermissionIconName(permission)
+                    grantedPermissions.add(mapOf(
+                        "permission" to permission,
+                        "icon" to iconName
+                    ))
+                    addedGroups.add(group)
+                    Log.d("GrantedPermission", "Granted permission: $permission, Icon: $iconName")
+                } else {
+                    Log.d("DeniedPermission", "Denied permission: $permission")
                 }
             }
         } catch (e: Exception) {
             Log.e("PermissionsError", "Error fetching permissions for $packageName", e)
         }
+        
         return grantedPermissions
+    } 
+
+    private fun getPermissionIconName(permission: String): String {
+        return when (permission) {
+            "android.permission.ACCESS_FINE_LOCATION",
+            "android.permission.ACCESS_COARSE_LOCATION",
+            "android.permission.ACCESS_BACKGROUND_LOCATION",
+            "android.permission.ACCESS_MEDIA_LOCATION" -> "location"
+            "android.permission.CAMERA" -> "camera"
+            "android.permission.RECORD_AUDIO" -> "microphone"
+            "android.permission.READ_EXTERNAL_STORAGE",
+            "android.permission.WRITE_EXTERNAL_STORAGE",
+            "android.permission.MANAGE_EXTERNAL_STORAGE",
+            "android.permission.READ_MEDIA_IMAGES",
+            "android.permission.READ_MEDIA_VIDEO" -> "storage"
+            else -> "unknown"
+        }
     }
+    
+    
 }

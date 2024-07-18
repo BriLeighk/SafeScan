@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'csv_utils.dart';
 import 'dart:async';
 import 'package:url_launcher/url_launcher.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
 }
 
@@ -45,112 +47,121 @@ class _MainPageState extends State<MainPage> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: <Widget>[
-            const SizedBox(height: 40),
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
-              child: Text(
-                'SafeScan',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-            ),
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
-              child: Text(
-                'SafeScan is here to help ensure your digital privacy. This app '
-                'gently checks for any potentially harmful apps on your device '
-                'and guides you on how to best adjust your privacy settings.\n'
-                '\nPlease select an option below to begin:',
-                style: TextStyle(fontSize: 18),
-                textAlign: TextAlign.center,
-              ),
-            ),
-            const Padding(
-              padding: EdgeInsets.only(top: 0, bottom: 50),
-              child: Divider(
-                height: 5,
-                thickness: 2,
-                indent: 20,
-                endIndent: 20,
-              ),
-            ),
-            const Padding(
-                padding: EdgeInsets.symmetric(vertical: 5.0, horizontal: 15.0),
-                child: Text(
-                  'Scanning your device will '
-                  'alert you of any potentially harmful apps on your device, ranked '
-                  'from most to least harmful.',
-                  style: TextStyle(fontSize: 14),
-                )),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 5.0),
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          const MyHomePage(title: 'Scan Device'),
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  minimumSize: const Size(200, 60),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: <Widget>[
+                const SizedBox(height: 40),
+                const Padding(
+                  padding:
+                      EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
+                  child: Text(
+                    'SafeScan',
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  ),
                 ),
-                child: const Text('Scan Device'),
-              ),
-            ),
-            const Padding(
-                padding: EdgeInsets.symmetric(vertical: 5.0, horizontal: 15.0),
-                child: Text(
-                  '\nConducting a privacy scan will '
-                  'provide you with some popular social media apps on your device '
-                  'that may need privacy setting adjustments, and give you the option '
-                  'to clear browsing traces.',
-                  style: TextStyle(fontSize: 14),
-                )),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const PrivacyScanPage(),
+                const Padding(
+                  padding:
+                      EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
+                  child: Text(
+                    'SafeScan is here to help ensure your digital privacy. This app '
+                    'gently checks for any potentially harmful apps on your device '
+                    'and guides you on how to best adjust your privacy settings.\n'
+                    '\nPlease select an option below to begin:',
+                    style: TextStyle(fontSize: 18),
+                    textAlign: TextAlign.center,
                   ),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size(200, 60),
-                padding: const EdgeInsets.symmetric(vertical: 5.0),
-              ),
-              child: const Text('Privacy Scan'),
-            ),
-            const Padding(
-                padding: EdgeInsets.symmetric(vertical: 5.0, horizontal: 15.0),
-                child: Text(
-                  '\nConducting an ADB Scan allows you to scan your device remotely'
-                  ' from an alternate device.',
-                  style: TextStyle(fontSize: 14),
-                )),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ADBScanPage(),
+                ),
+                const Padding(
+                  padding: EdgeInsets.only(top: 0, bottom: 50),
+                  child: Divider(
+                    height: 5,
+                    thickness: 2,
+                    indent: 20,
+                    endIndent: 20,
                   ),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size(200, 60),
-                padding: const EdgeInsets.symmetric(vertical: 5.0),
-              ),
-              child: const Text('ADB Scan'),
+                ),
+                const Padding(
+                    padding:
+                        EdgeInsets.symmetric(vertical: 5.0, horizontal: 15.0),
+                    child: Text(
+                      'Scanning your device will '
+                      'alert you of any potentially harmful apps on your device, ranked '
+                      'from most to least harmful.',
+                      style: TextStyle(fontSize: 14),
+                    )),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 5.0),
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              const MyHomePage(title: 'Scan Device'),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size(200, 60),
+                    ),
+                    child: const Text('Scan Device'),
+                  ),
+                ),
+                const Padding(
+                    padding:
+                        EdgeInsets.symmetric(vertical: 5.0, horizontal: 15.0),
+                    child: Text(
+                      '\nConducting a privacy scan will '
+                      'provide you with some popular social media apps on your device '
+                      'that may need privacy setting adjustments, and give you the option '
+                      'to clear browsing traces.',
+                      style: TextStyle(fontSize: 14),
+                    )),
+                ElevatedButton(
+                  onPressed: () async {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const PrivacyScanPage(),
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(200, 60),
+                    padding: const EdgeInsets.symmetric(vertical: 5.0),
+                  ),
+                  child: const Text('Privacy Scan'),
+                ),
+                const Padding(
+                    padding:
+                        EdgeInsets.symmetric(vertical: 5.0, horizontal: 15.0),
+                    child: Text(
+                      '\nConducting an ADB Scan allows you to scan your device remotely'
+                      ' from an alternate device.',
+                      style: TextStyle(fontSize: 14),
+                    )),
+                ElevatedButton(
+                  onPressed: () async {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ADBScanPage(),
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(200, 60),
+                    padding: const EdgeInsets.symmetric(vertical: 5.0),
+                  ),
+                  child: const Text('ADB Scan'),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -306,6 +317,38 @@ class _PrivacyScanPageState extends State<PrivacyScanPage> {
   }
 }
 
+class PermissionInfo {
+  final String name;
+  final IconData icon;
+  final String description;
+
+  PermissionInfo(
+      {required this.name, required this.icon, required this.description});
+}
+
+class PermissionIcon {
+  final String permission;
+
+  PermissionIcon({required this.permission});
+
+  // Permission Groups
+  IconData getIcon() {
+    switch (permission) {
+      case "location":
+        return Icons.location_on;
+      case "camera":
+        return Icons.camera_alt;
+      case "microphone":
+        return Icons.mic;
+      case "storage":
+        return Icons.folder;
+      default:
+        return Icons.security; // Default for unknown permissions
+    }
+  }
+}
+
+// App Scan Page
 class _MyHomePageState extends State<MyHomePage> {
   static const platform = MethodChannel('samples.flutter.dev/spyware');
   static const settingsChannel = MethodChannel('com.example.spyware/settings');
@@ -313,36 +356,109 @@ class _MyHomePageState extends State<MyHomePage> {
   bool _isLoading = false;
   List<Map<String, dynamic>> _spywareApps = [];
 
+  final List<PermissionInfo> _permissionsInfo = [
+    PermissionInfo(
+      name: 'Location Sharing',
+      icon: Icons.location_on,
+      description:
+          'Grants access to your active location. While essential for navigation and weather apps, it can serve details such as your home address, routes you’ve taken, and other sensitive information to the apps that enable it. It is best to stay cautious and only enable location sharing if absolutely necessary.',
+    ),
+    PermissionInfo(
+      name: 'Camera',
+      icon: Icons.camera_alt,
+      description:
+          'Grants access to your camera for taking photos and videos. Ensure that each app that enables it has a use for it, such as social media, photography, and editing apps. Other apps, such as music and audio apps, should not require camera enabling.',
+    ),
+    PermissionInfo(
+      name: 'Microphone',
+      icon: Icons.mic,
+      description:
+          'Grants access to your microphone for recording audio. Audio is a powerful tool, and if given to a non-trusted application, can be used to record confidential information. Ensure it is only enabled for trustworthy apps that have a use for it.',
+    ),
+    PermissionInfo(
+      name: 'Files and Media',
+      icon: Icons.folder,
+      description:
+          'Grants access to photo galleries and file managers on the device. By giving apps access to storage, any sensitive information contained on the device can be accessed. It is best to be weary of what apps have this permission enabled, and keep sensitive information stored in an encrypted cloud, instead of on the device.',
+    ),
+  ];
+
   Future<void> _getSpywareApps() async {
     setState(() {
       _isLoading = true;
     });
 
+    // Gets list of spyware/dual-use apps detected on device
     List<dynamic> spywareApps;
     try {
-      final List<dynamic> result =
-          await platform.invokeMethod('getSpywareApps');
+      List<List<dynamic>> remoteCSVData = await fetchRemoteCSVData();
+      final List<dynamic> result = await platform
+          .invokeMethod('getSpywareApps', {"csvData": remoteCSVData});
       spywareApps = result.map((app) {
-        return Map<String, String>.from(app.map((key, value) {
-          return MapEntry(key.toString(), value.toString());
+        return Map<String, dynamic>.from(app.map((key, value) {
+          return MapEntry(key.toString(), value);
         }));
       }).toList();
-      spywareApps.sort((a, b) => _getSortWeight(a['type'], a['installer'])
-          .compareTo(_getSortWeight(b['type'], b['installer'])));
-    } on PlatformException catch (e) {
-      spywareApps = [
-        {
-          "id": "Error",
-          "name": "Failed to get spyware apps: '${e.message}'.",
-          "icon": null
-        }
-      ];
+    } catch (e) {
+      // Fallback to local CSV data if remote fetch fails
+      try {
+        List<List<dynamic>> localCSVData = await loadLocalCSVData();
+        final List<dynamic> result = await platform
+            .invokeMethod('getSpywareApps', {"csvData": localCSVData});
+        spywareApps = result.map((app) {
+          return Map<String, dynamic>.from(app.map((key, value) {
+            return MapEntry(key.toString(), value);
+          }));
+        }).toList();
+      } catch (localException) {
+        spywareApps = [
+          {
+            "id": "Error",
+            "name":
+                "Failed to get spyware apps: '${localException.toString()}'.",
+            "icon": null
+          }
+        ];
+      }
     }
+
+    spywareApps.sort((a, b) => _getSortWeight(a['type'], a['installer'])
+        .compareTo(_getSortWeight(b['type'], b['installer'])));
+
     setState(() {
       _spywareApps = spywareApps.cast<Map<String, dynamic>>();
       _isLoading = false;
       _searchPerformed = true;
     });
+  }
+
+  // Adds Bulleted List of Permission Instructions to Top of App Scan Page
+  Widget _buildPermissionsInfo() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: _permissionsInfo.map((info) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4.0),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(info.icon, size: 24.0),
+              const SizedBox(width: 8.0),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(info.name,
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
+                    Text(info.description),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
   }
 
   Future<void> _openAppSettings(String package) async {
@@ -375,6 +491,7 @@ class _MyHomePageState extends State<MyHomePage> {
     const List<String> secureInstallers = [
       'com.android.vending',
       'com.amazon.venezia',
+      // Add more secure installers if they exist
     ];
     return Scaffold(
       appBar: AppBar(
@@ -418,6 +535,10 @@ class _MyHomePageState extends State<MyHomePage> {
               ],
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: _buildPermissionsInfo(),
+          ),
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -430,9 +551,15 @@ class _MyHomePageState extends State<MyHomePage> {
                           var app = _spywareApps[index];
                           Color baseColor =
                               lightColor(app, app['installer'], app['type']);
-
+                          List<PermissionIcon> permissions =
+                              (app['permissions'] as List<dynamic>? ?? [])
+                                  .map((perm) {
+                            return PermissionIcon(
+                              permission: perm['icon'],
+                            );
+                          }).toList();
                           return TextButton(
-                            onPressed: () {
+                            onPressed: () async {
                               _openAppSettings(app['id']);
                             },
                             child: Container(
@@ -471,6 +598,11 @@ class _MyHomePageState extends State<MyHomePage> {
                                                 _launchURL(app['storeLink']),
                                           )
                                         : null,
+                                subtitle: Row(
+                                  children: permissions.map((permIcon) {
+                                    return Icon(permIcon.getIcon(), size: 18.0);
+                                  }).toList(),
+                                ),
                               ),
                             ),
                           );
@@ -482,7 +614,9 @@ class _MyHomePageState extends State<MyHomePage> {
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.all(8.0),
         child: ElevatedButton(
-          onPressed: _getSpywareApps,
+          onPressed: () async {
+            await _getSpywareApps();
+          },
           style: ElevatedButton.styleFrom(
             foregroundColor: Theme.of(context).colorScheme.onPrimary,
             backgroundColor: Theme.of(context).colorScheme.primary,
@@ -494,6 +628,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 }
 
+// ADB Scan Page
 class ADBScanPage extends StatefulWidget {
   const ADBScanPage({super.key});
 
@@ -502,55 +637,54 @@ class ADBScanPage extends StatefulWidget {
 }
 
 class _ADBScanPageState extends State<ADBScanPage> {
-  static const MethodChannel adbChannel =
-      MethodChannel('com.example.spyware/adb');
-
-  String _scanResult = "";
+  static const adbChannel = MethodChannel('com.example.spyware/adb');
+  bool _isConnected = false;
   bool _isScanning = false;
+  String _scanResult = '';
+  final TextEditingController _portController = TextEditingController();
 
-  Future<void> _scanOtherDevice() async {
+  Future<void> _connectToDevice() async {
+    try {
+      final bool result = await adbChannel.invokeMethod('connectToDevice',
+          {'port': int.tryParse(_portController.text) ?? 5555});
+      setState(() {
+        _isConnected = result;
+      });
+    } catch (e) {
+      setState(() {
+        _isConnected = false;
+        _scanResult = 'Error connecting to device: $e';
+      });
+    }
+  }
+
+  Future<void> _scanDevice() async {
+    if (!_isConnected) return;
+
     setState(() {
       _isScanning = true;
+      _scanResult = 'Scanning...';
     });
 
     try {
-      final String result = await adbChannel.invokeMethod('scanOtherDevice');
+      // Fetch the remote CSV data
+      List<List<dynamic>> remoteCSVData = await fetchRemoteCSVData();
+
+      // Perform the scan
+      final String result = await adbChannel
+          .invokeMethod('scanDevice', {'csvData': remoteCSVData});
       setState(() {
         _scanResult = result;
       });
     } catch (e) {
       setState(() {
-        _scanResult = "Error: ${e.toString()}";
+        _scanResult = 'Error scanning device: $e';
       });
     } finally {
       setState(() {
         _isScanning = false;
       });
     }
-  }
-
-  void _showInstructions() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Instructions for ADB Scan'),
-          content: const Text(
-              '1. Connect the target device to this device using a USB cable.\n'
-              '2. Ensure that USB debugging is enabled on the target device.\n'
-              '3. Press "Scan Other Device" to begin the scan.\n'
-              '4. Wait for the scan to complete and review the results.'),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('OK'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
   }
 
   @override
@@ -562,27 +696,34 @@ class _ADBScanPageState extends State<ADBScanPage> {
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
-          children: [
-            ElevatedButton(
-              onPressed: _showInstructions,
-              child: const Text('Show Instructions'),
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            const Text('Step-by-Step Instructions:'),
+            const Text(
+                '1. Connect the target device to the source device via USB.'),
+            const Text('2. Enable USB debugging on the target device.'),
+            const Text(
+                '3. Enter the port number and click "Connect to Device".'),
+            TextField(
+              controller: _portController,
+              decoration: const InputDecoration(
+                  labelText: 'Enter Port Number (e.g., 5555)'),
             ),
-            const Divider(height: 20),
             ElevatedButton(
-              onPressed: _isScanning ? null : _scanOtherDevice,
-              child: _isScanning
-                  ? const CircularProgressIndicator()
-                  : const Text('Scan Other Device'),
+              onPressed: _connectToDevice,
+              child: const Text('Connect to Device'),
             ),
-            const SizedBox(height: 20),
-            Expanded(
-              child: SingleChildScrollView(
-                child: Text(
-                  _scanResult,
-                  style: const TextStyle(fontSize: 16),
-                ),
+            if (_isConnected) ...[
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: _isScanning ? null : _scanDevice,
+                child: _isScanning
+                    ? const CircularProgressIndicator()
+                    : const Text('Scan Device'),
               ),
-            ),
+            ],
+            const SizedBox(height: 20),
+            Text(_scanResult),
           ],
         ),
       ),
