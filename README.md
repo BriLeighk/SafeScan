@@ -19,7 +19,7 @@ This app is designed to assist victims of Intimate Partner Violence (IPV), who f
 - [x] **Social Media Settings**: Links to the settings pages of popular social media apps installed on the device, with recommendations on which settings to deactivate for enhanced privacy.
 
 #### ADB Feature
-- [ ] **Remote Scanning**: Allows a source device (with the app installed) to connect remotely (via Bluetooth, WiFi, or USB) to a target device.
+- [x] **Remote Scanning**: Allows a source device (with the app installed) to connect remotely (via USB) to a target device.
 - [ ] **Data Output**: Outputs all scan data from the target device to the source device.
 - [ ] **Risk Mitigation**: Enables the victim to get help without having to download anything directly on their device, reducing the risk of alerting their abuser.
 
