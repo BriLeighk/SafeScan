@@ -4,6 +4,8 @@ import 'package:csv/csv.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 
+// Handling of the CSV functionality
+// TODO: implement airplane mode fallback method
 const String csvUrl =
     'https://raw.githubusercontent.com/stopipv/isdi/main/static_data/app-flags.csv';
 
