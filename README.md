@@ -19,7 +19,7 @@ This app is designed to assist victims of Intimate Partner Violence (IPV), who f
 - [x] **Social Media Settings**: Links to the settings pages of popular social media apps installed on the device, with recommendations on which settings to deactivate for enhanced privacy.
 
 #### ADB Feature
-- [x] **Remote Scanning**: Allows a source device (with the app installed) to connect remotely (via USB) to a target device.
+- [ ] **Remote Scanning**: Allows a source device (with the app installed) to connect remotely (via USB) to a target device.
 - [ ] **Data Output**: Outputs all scan data from the target device to the source device.
 - [ ] **Risk Mitigation**: Enables the victim to get help without having to download anything directly on their device, reducing the risk of alerting their abuser.
 
@@ -34,3 +34,27 @@ This app is designed to assist victims of Intimate Partner Violence (IPV), who f
 - Install dependencies: ` flutter pub get `
 - Run the app: ` flutter run `
 
+## Useful Commands
+- ```adb devices```: shell command that enables access to a connected Android device.
+- ```adb tcpip 5555```: shell command to enable tcp/ip on the network.
+- ```adb shell ip -f inet addr show wlan0```: shell command to get the IP address of the target device.
+- ```adb connect <IP_ADDRESS>:5555```: shell command to connect to the target device.
+- ```flutter clean```: clear the build cache.
+- ```flutter build apk```: build app apk for downloading the app.
+- ```flutter intall```: install app on specified device.
+
+## Attempting to Open Google's Privacy Checkup Directly
+```adb shell am start -n com.google.android.gms/com.google.android.gms.accountsettings.mg.ui.main.MainActivity```
+Running this adb command causes the following error:
+```
+Starting: Intent { cmp=com.google.android.gms/.accountsettings.mg.ui.main.MainActivity }
+Exception occurred while executing 'start':
+java.lang.SecurityException: Permission Denial: starting Intent { flg=0x10000000 cmp=com.google.android.gms/.accountsettings.mg.ui.main.MainActivity } from null (pid=10507, uid=2000) not exported from uid 10212.
+```
+MainActivity for the in-device Google settings is not exported for external use: [android:exported](https://developer.android.com/privacy-and-security/risks/android-exported#:~:text=The%20android%3Aexported%20attribute%20sets,by%20its%20exact%20class%20name.)
+
+## ADB Connection Solution
+Automate ADB Process and enable ADB over the network and connecting to the target device programmatically:
+- Add [ADB-OTG](https://github.com/KhunHtetzNaing/ADB-OTG) Library: handles ADB commands.
+- Enable ADB over TCP/IP: Implement a method to enable ADB over TCP/IP on both target and source devices.
+- Connect to Target Device: Implement a method to connect to the target device using its IP address (can be fetched both programmatically & manually by the user)
