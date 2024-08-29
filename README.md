@@ -39,6 +39,7 @@ This app is designed to assist victims of Intimate Partner Violence (IPV), who f
 - ```adb tcpip 5555```: shell command to enable tcp/ip on the network.
 - ```adb shell ip -f inet addr show wlan0```: shell command to get the IP address of the target device.
 - ```adb connect <IP_ADDRESS>:5555```: shell command to connect to the target device.
+- ```adb shell pm list packages ```: shell command to get list of app packages from the device.
 - ```flutter clean```: clear the build cache.
 - ```flutter build apk```: build app apk for downloading the app.
 - ```flutter intall```: install app on specified device.
