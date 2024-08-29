@@ -58,3 +58,21 @@ Automate ADB Process and enable ADB over the network and connecting to the targe
 - Add [ADB-OTG](https://github.com/KhunHtetzNaing/ADB-OTG) Library: handles ADB commands.
 - Enable ADB over TCP/IP: Implement a method to enable ADB over TCP/IP on both target and source devices.
 - Connect to Target Device: Implement a method to connect to the target device using its IP address (can be fetched both programmatically & manually by the user)
+
+### [ADB-OTG Library](https://jitpack.io/#KhunHtetzNaing/ADB-OTG/master)
+- Add to root build.gradle
+```
+dependencyResolutionManagement {
+		repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+		repositories {
+			mavenCentral()
+			maven { url 'https://jitpack.io' }
+		}
+	}
+```
+- Add dependency:
+```
+dependencies {
+	        implementation 'com.github.KhunHtetzNaing:ADB-OTG:master'
+	}
+```
