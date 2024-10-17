@@ -46,6 +46,9 @@ This app is designed to assist victims of Intimate Partner Violence (IPV), who f
 - ```dumpsys```: dumps diagnostic information about the status of system services
 - ```pm list packages```: lists all packages on the device.
 
+## Useful Resources - Potential Future Features
+- [GenyMobile](https://github.com/Genymobile/scrcpy): This application mirrors Android devices (video and audio) connected via USB or over TCP/IP, and allows to control the device with the keyboard and the mouse of the computer.
+
 ## Attempting to Open Google's Privacy Checkup Directly
 ```adb shell am start -n com.google.android.gms/com.google.android.gms.accountsettings.mg.ui.main.MainActivity```
 Running this adb command causes the following error:
