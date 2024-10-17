@@ -43,6 +43,8 @@ This app is designed to assist victims of Intimate Partner Violence (IPV), who f
 - ```flutter clean```: clear the build cache.
 - ```flutter build apk```: build app apk for downloading the app.
 - ```flutter intall```: install app on specified device.
+- ```dumpsys```: dumps diagnostic information about the status of system services
+- ```pm list packages```: lists all packages on the device.
 
 ## Attempting to Open Google's Privacy Checkup Directly
 ```adb shell am start -n com.google.android.gms/com.google.android.gms.accountsettings.mg.ui.main.MainActivity```
